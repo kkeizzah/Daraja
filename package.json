@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
+    
+    "axios": "latest",
     "express": "^4.19.2",
     "morgan": "^1.10.0",
     "cors": "^2.8.5"
