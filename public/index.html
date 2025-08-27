@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Payment Demo (No PHP)</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121937;
+        --text: #e9ecff;
+        --muted: #a7b0d6;
+        --accent: #6ea8fe;
+        --accent-2: #7cf3c5;
+        --danger: #ff6b6b;
+        --radius: 16px;
+        --shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 10% -20%, #1a235a, #0b1020);
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .card {
+        width: 100%;
+        max-width: 560px;
+        background: linear-gradient(180deg, #131a3b 0%, #101634 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        inline-size: 36px;
+        block-size: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        filter: drop-shadow(0 6px 18px rgba(110, 168, 254, 0.35));
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+      .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      form {
+        padding: 24px;
+        display: grid;
+        gap: 16px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+      input {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text);
+        outline: none;
+      }
+      input::placeholder { color: #93a0d3; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      button {
+        margin-top: 6px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        color: #0b1020;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        transition: transform 0.05s ease;
+      }
+      button:active { transform: translateY(1px); }
+      .note {
+        padding: 0 24px 24px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .status {
+        padding: 18px 24px 24px;
+        display: grid;
+        gap: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      }
+      .status .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: rgba(124, 243, 197, 0.12);
+        border: 1px solid rgba(124, 243, 197, 0.35);
+      }
+      .err { color: var(--danger); }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      code {
+        background: rgba(255,255,255,0.06);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="header">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Quick Pay</h1>
+          <div class="sub">Plain HTML frontend + Node backend</div>
+        </div>
+      </div>
+
+      <form id="pay-form">
+        <div>
+          <label for="amount">Amount</label>
+          <input id="amount" name="amount" type="number" step="0.01" min="0" placeholder="e.g., 10.00" required />
+        </div>
+        <div class="row">
+          <div>
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="+254712345678" required />
+          </div>
+          <div>
+            <label for="reference">Reference (optional)</label>
+            <input id="reference" name="reference" type="text" placeholder="ORDER-1001" />
+          </div>
+        </div>
+        <button type="submit">Send Payment</button>
+      </form>
+
+      <div class="note">
+        This demo validates input, hits <code>/api/pay</code>, and polls <code>/api/status/:id</code> until it’s done.
+      </div>
+
+      <div class="status" id="status" hidden>
+        <div><strong>Payment ID:</strong> <span class="mono" id="s-id">—</span></div>
+        <div><strong>Status:</strong> <span class="pill" id="s-status">—</span></div>
+        <div><strong>Reference:</strong> <span class="mono" id="s-ref">—</span></div>
+        <div><strong>Created:</strong> <span class="mono" id="s-created">—</span></div>
+        <div id="error" class="err"></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("pay-form");
+      const statusWrap = document.getElementById("status");
+      const sId = document.getElementById("s-id");
+      const sStatus = document.getElementById("s-status");
+      const sRef = document.getElementById("s-ref");
+      const sCreated = document.getElementById("s-created");
+      const errorBox = document.getElementById("error");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorBox.textContent = "";
+
+        const data = {
+          amount: Number(form.amount.value),
+          phone: form.phone.value.trim(),
+          reference: form.reference.value.trim() || undefined,
+        };
+
+        try {
+          const res = await fetch("/api/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const json = await res.json();
+          if (!res.ok || !json.ok) {
+            const errs = (json && json.errors) ? json.errors.join(" ") : (json.error || "Request failed.");
+            throw new Error(errs);
+          }
+
+          const p = json.payment;
+          sId.textContent = p.id;
+          sRef.textContent = p.reference;
+          sCreated.textContent = p.createdAt;
+          sStatus.textContent = p.status;
+          statusWrap.hidden = false;
+
+          // Poll for completion
+          pollStatus(p.id);
+        } catch (err) {
+          errorBox.textContent = err.message || String(err);
+          statusWrap.hidden = false;
+        }
+      });
+
+      async function pollStatus(id) {
+        let tries = 0;
+        const maxTries = 15; // ~30s total if interval=2s
+
+        const interval = setInterval(async () => {
+          tries++;
+          try {
+            const res = await fetch(`/api/status/${encodeURIComponent(id)}`);
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.error || "Status error");
+            const p = json.payment;
+            sStatus.textContent = p.status;
+
+            if (p.status !== "PENDING") {
+              clearInterval(interval);
+              if (p.completedAt) {
+                const completed = document.createElement("div");
+                completed.innerHTML =
+                  "<strong>Completed:</strong> <span class='mono'>" + p.completedAt + "</span>";
+                document.getElementById("status").appendChild(completed);
+              }
+            }
+          } catch (e) {
+            clearInterval(interval);
+            errorBox.textContent = e.message || String(e);
+          }
+          if (tries >= maxTries) {
+            clearInterval(interval);
+            errorBox.textContent = "Stopped polling (timeout).";
+          }
+        }, 2000);
+      }
+    </script>
+  </body>
+</html>
